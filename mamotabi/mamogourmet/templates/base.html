@@ -35,7 +35,35 @@
         </li>
         {% endif %}
       </ul>
+      <form method="GET" action="{% url 'mamogourmet:search' %}" name="searchform">
+        <ul class="navbar-nav mr-auto">
+          <li class="nav-item">
+            <select class="form-control nav-link" name="pref">
+              <option value="">都道府県</option>
+              {% for item in pref_list %}
+              <option value="{{item.pref}}">{{ item.name }}</option>
+              {% endfor %}
+            </select>
+          </li>
+          <li class="nav-item">
+            <select class="form-control nav-link" name="category_l">
+              <option value="">カテゴリ</option>
+              {% for item in category_list %}
+              <option value="{{item.category_l}}">{{ item.name }}</option>
+              {% endfor %}
+            </select>
+          </li>
+          <li class="nav-item">
+            <input class="form-control nav-link" type="text" placeholder="フリーワード" aria-label="Search" name="freeword">
+          </li>
+          <span>　</span>
+          <li class="nav-item">
+            <button type="submit" class="btn common-btn">Search</button>
+          </li>
+        </ul>
+      </form>
     </div>
+
   </nav>
 
   {% block content %}
