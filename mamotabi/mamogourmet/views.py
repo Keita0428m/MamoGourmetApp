@@ -3,10 +3,11 @@ from django.shortcuts import render, redirect
 # Create your views here.
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView, TemplateView
 from .models import Pref, Category
-from .forms import SearchForm
+from .forms import SearchForm, SignUpForm, LoginForm
 import json
 import requests
-
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.views import LoginView, LogoutView
 # グローバル関数
 # どこからもkeyidを呼び出すことが出来る
 
@@ -124,3 +125,28 @@ def ShopInfo(request, restid):
     }
 
     return render(request, 'mamogourmet/shop_info.html', params)
+
+
+class SignUp(CreateView):
+    form_class = SignUpForm
+    template_name = 'mamogourmet/signup.html'
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(data=request.POST)
+        if form.is_valid():
+            form.save()
+            username = form.cleaned_data.get('username')
+            raw_password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=raw_password)
+            login(request, user)
+            return redirect('mamogourmet:index')
+        return render(request, 'mamogourmet/signup.html', {'form': form})
+
+
+class Login(LoginView):
+    form_class = LoginForm
+    template_name = 'mamogourmet/login.html'
+
+
+class Logout(LogoutView):
+    template_name = 'mamogourmet/logout.html'

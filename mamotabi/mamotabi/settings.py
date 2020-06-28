@@ -124,3 +124,6 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'mamogourmet/static'),
 ]
+
+LOGIN_URL = 'mamogourmet:login'
+LOGIN_REDIRECT_URL = 'mamogourmet:index'
