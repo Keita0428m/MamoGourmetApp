@@ -9,6 +9,7 @@ import requests
 from django.db.models import Avg
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib import messages
 # グローバル関数
 # どこからもkeyidを呼び出すことが出来る
 
@@ -118,7 +119,6 @@ def ShopInfo(request, restid):
     query = get_gnavi_data(id, "", "", "", 1)
     res_list = rest_search(query)
     restaurants_info = extract_restaurant_info(res_list)
-
     review_count = Review.objects.filter(shop_id=restid).count()
     score_ave = Review.objects.filter(shop_id=restid).aggregate(Avg('score'))
     average = score_ave['score__avg']
@@ -130,7 +130,6 @@ def ShopInfo(request, restid):
     if request.method == 'GET':
         review_form = ReviewForm()
         review_list = Review.objects.filter(shop_id=restid)
-
     else:
         form = ReviewForm(data=request.POST)
         score = request.POST['score']
@@ -140,15 +139,24 @@ def ShopInfo(request, restid):
             review = Review()
             review.shop_id = restid
             review.shop_name = restaurants_info[0][1]
-            review.shop_kana = restaurants_info[0][2]
-            review.shop_address = restaurants_info[0][7]
             review.image_url = restaurants_info[0][5]
             review.user = request.user
             review.score = score
             review.comment = comment
-            review.save()
-            return redirect('mamogourmet:shop_info', restid)
+            # 以下のif文を追加。レビュー投稿済みかの判断。
+            is_exist = 0
+            is_exist = Review.objects.filter(
+                shop_id=review.shop_id).filter(user=review.user).count()
+
+            if not is_exist == 0:
+                messages.error(request, '既にレビューを投稿済みです。')
+                return redirect('mamogourmet:shop_info', restid)
+            else:
+                review.save()
+                messages.success(request, 'レビューを投稿しました。')  # 追加
+                return redirect('mamogourmet:shop_info', restid)
         else:
+            messages.error(request, 'エラーがあります。')  # 追加
             return redirect('mamogourmet:shop_info', restid)
         return render(request, 'mamogourmet/index.html', {})
 
