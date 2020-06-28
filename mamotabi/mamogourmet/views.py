@@ -2,10 +2,11 @@ from django.shortcuts import render, redirect
 
 # Create your views here.
 from django.views.generic import CreateView, ListView, UpdateView, DeleteView, TemplateView
-from .models import Pref, Category
-from .forms import SearchForm, SignUpForm, LoginForm
+from .models import Pref, Category, Review
+from .forms import SearchForm, SignUpForm, LoginForm, ReviewForm
 import json
 import requests
+from django.db.models import Avg
 from django.contrib.auth import login, authenticate
 from django.contrib.auth.views import LoginView, LogoutView
 # グローバル関数
@@ -112,16 +113,53 @@ def extract_restaurant_info(restaurants: 'restaurant response') -> 'restaurant l
 
 
 def ShopInfo(request, restid):
-    # お店情報の取得
     keyid = get_keyid()
     id = restid
     query = get_gnavi_data(id, "", "", "", 1)
     res_list = rest_search(query)
     restaurants_info = extract_restaurant_info(res_list)
 
+    review_count = Review.objects.filter(shop_id=restid).count()
+    score_ave = Review.objects.filter(shop_id=restid).aggregate(Avg('score'))
+    average = score_ave['score__avg']
+    if average:
+        average_rate = average / 5 * 100
+    else:
+        average_rate = 0
+
+    if request.method == 'GET':
+        review_form = ReviewForm()
+        review_list = Review.objects.filter(shop_id=restid)
+
+    else:
+        form = ReviewForm(data=request.POST)
+        score = request.POST['score']
+        comment = request.POST['comment']
+
+        if form.is_valid():
+            review = Review()
+            review.shop_id = restid
+            review.shop_name = restaurants_info[0][1]
+            review.shop_kana = restaurants_info[0][2]
+            review.shop_address = restaurants_info[0][7]
+            review.image_url = restaurants_info[0][5]
+            review.user = request.user
+            review.score = score
+            review.comment = comment
+            review.save()
+            return redirect('mamogourmet:shop_info', restid)
+        else:
+            return redirect('mamogourmet:shop_info', restid)
+        return render(request, 'mamogourmet/index.html', {})
+
     params = {
         'title': '店舗詳細',
+        'review_count': review_count,
         'restaurants_info': restaurants_info,
+        'review_form': review_form,
+        'review_list': review_list,
+        'average': average,
+        'average_rate': average_rate,
     }
 
     return render(request, 'mamogourmet/shop_info.html', params)
