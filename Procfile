@@ -1,1 +1,1 @@
-web: gunicorn techpit.wsgi
+web: gunicorn mamotabi.wsgi
