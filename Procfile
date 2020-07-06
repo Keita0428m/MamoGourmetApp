@@ -1,1 +1,1 @@
-web: gunicorn mamotabi.wsgi
+web: gunicorn ./mamotabi.wsgi
